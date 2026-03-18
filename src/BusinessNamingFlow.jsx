@@ -54,11 +54,7 @@ const MOCK_NAMES = [
   },
 ];
 
-function starterBatch(offset) {
-  return [0, 1, 2].map((i) => MOCK_NAMES[(offset + i) % MOCK_NAMES.length]);
-}
-
-function MadLibWordBank({ label, value, options, onPick }) {
+function MadLibWordBank({ label, value, options, onPick, slotKey }) {
   return (
     <div className="mb-5">
       <p className="text-sm font-semibold text-stone-700 mb-2">{label}</p>
@@ -68,6 +64,18 @@ function MadLibWordBank({ label, value, options, onPick }) {
             key={opt}
             type="button"
             onClick={() => onPick(opt)}
+            draggable
+            onDragStart={(e) => {
+              try {
+                e.dataTransfer.setData(
+                  "text/plain",
+                  JSON.stringify({ slot: slotKey, value: opt })
+                );
+                e.dataTransfer.effectAllowed = "move";
+              } catch {
+                // Ignore; drag/drop may not be supported in this environment.
+              }
+            }}
             className={`rounded-xl border px-3 py-2.5 text-left text-sm transition-all ${
               value === opt
                 ? "border-red-500 bg-red-500 text-white"
@@ -143,13 +151,33 @@ function StepBrainstorm({ onBack, onSelect }) {
   const [biz, setBiz] = useState(null);
   const [love, setLove] = useState(null);
   const [extraNote, setExtraNote] = useState("");
-  const [starterOffset, setStarterOffset] = useState(0);
   const [tailored, setTailored] = useState(null);
   const [tailorIndex, setTailorIndex] = useState(0);
   const [loading, setLoading] = useState(false);
   const [showOptionalNote, setShowOptionalNote] = useState(false);
+  const [dragOverSlot, setDragOverSlot] = useState(null); // "vibe" | "biz" | "love" | null
 
-  const starters = starterBatch(starterOffset);
+  const pickSlotValue = (slot, value) => {
+    if (slot === "vibe") setVibe(value);
+    else if (slot === "biz") setBiz(value);
+    else if (slot === "love") setLove(value);
+  };
+
+  const handleSlotDrop = (targetSlot, e) => {
+    e.preventDefault();
+    setDragOverSlot(null);
+
+    const raw = e.dataTransfer.getData("text/plain");
+    if (!raw) return;
+
+    try {
+      const parsed = JSON.parse(raw);
+      if (!parsed || parsed.slot !== targetSlot) return;
+      pickSlotValue(targetSlot, parsed.value);
+    } catch {
+      // Ignore invalid drag payload
+    }
+  };
 
   const madLibComplete = Boolean(vibe && biz && love);
   const canTailor = madLibComplete || extraNote.trim().length > 0;
@@ -187,50 +215,73 @@ function StepBrainstorm({ onBack, onSelect }) {
         </p>
       </div>
 
-      {/* Instant starter ideas (no input required) */}
-      <p className="text-xs font-semibold tracking-widest text-stone-400 uppercase mb-3">
-        Starter picks
-      </p>
-      <div className="flex flex-col gap-3 mb-6">
-        {starters.map((idea) => (
-          <button
-            key={`${starterOffset}-${idea.name}`}
-            type="button"
-            onClick={() => onSelect(idea.name)}
-            className="w-full text-left rounded-2xl border border-stone-200 bg-white p-4 hover:border-stone-300 hover:bg-stone-50 transition-all"
-          >
-            <p className="font-bold text-stone-800 text-lg">{idea.name}</p>
-            <p className="text-stone-400 text-sm mt-1">{idea.reason}</p>
-          </button>
-        ))}
-      </div>
-      <button
-        type="button"
-        onClick={() => setStarterOffset((o) => o + 3)}
-        className="w-full mb-8 py-2.5 text-sm font-medium text-stone-600 border border-stone-200 rounded-xl hover:bg-stone-50 transition-colors"
-      >
-        Show 3 more ideas
-      </button>
-
       {/* Mad-lib refine */}
       <div className="border-t border-stone-100 pt-6">
         <p className="text-xs font-semibold tracking-widest text-stone-400 uppercase mb-2">
           Tune ideas to you
         </p>
         <p className="text-stone-600 text-base mb-4">
-          Tap once in each row to finish the sentence.
+          Drag a chip into the sentence (or tap a chip) to fill the blanks.
         </p>
 
         <div className="rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4 mb-6 text-center text-stone-800 text-lg leading-relaxed">
           A{" "}
-          <span className={vibe ? "font-bold text-red-600" : "text-stone-400"}>
+          <span
+            onDragOver={(e) => e.preventDefault()}
+            onDragEnter={() => setDragOverSlot("vibe")}
+            onDragLeave={() =>
+              setDragOverSlot((s) => (s === "vibe" ? null : s))
+            }
+            onDrop={(e) => handleSlotDrop("vibe", e)}
+            role="button"
+            tabIndex={0}
+            className={`inline-flex items-center px-2 rounded-lg border transition-colors ${
+              vibe
+                ? "border-red-500 bg-white text-red-600 font-bold"
+                : dragOverSlot === "vibe"
+                  ? "border-red-300 bg-red-50 text-stone-600"
+                  : "border-transparent bg-stone-50 text-stone-400"
+            }`}
+          >
             {vibe ?? "……"}
           </span>{" "}
-          <span className={biz ? "font-bold text-red-600" : "text-stone-400"}>
+          <span
+            onDragOver={(e) => e.preventDefault()}
+            onDragEnter={() => setDragOverSlot("biz")}
+            onDragLeave={() =>
+              setDragOverSlot((s) => (s === "biz" ? null : s))
+            }
+            onDrop={(e) => handleSlotDrop("biz", e)}
+            role="button"
+            tabIndex={0}
+            className={`inline-flex items-center px-2 rounded-lg border transition-colors ${
+              biz
+                ? "border-red-500 bg-white text-red-600 font-bold"
+                : dragOverSlot === "biz"
+                  ? "border-red-300 bg-red-50 text-stone-600"
+                  : "border-transparent bg-stone-50 text-stone-400"
+            }`}
+          >
             {biz ?? "……"}
           </span>{" "}
           for people who love{" "}
-          <span className={love ? "font-bold text-red-600" : "text-stone-400"}>
+          <span
+            onDragOver={(e) => e.preventDefault()}
+            onDragEnter={() => setDragOverSlot("love")}
+            onDragLeave={() =>
+              setDragOverSlot((s) => (s === "love" ? null : s))
+            }
+            onDrop={(e) => handleSlotDrop("love", e)}
+            role="button"
+            tabIndex={0}
+            className={`inline-flex items-center px-2 rounded-lg border transition-colors ${
+              love
+                ? "border-red-500 bg-white text-red-600 font-bold"
+                : dragOverSlot === "love"
+                  ? "border-red-300 bg-red-50 text-stone-600"
+                  : "border-transparent bg-stone-50 text-stone-400"
+            }`}
+          >
             {love ?? "……"}
           </span>
           .
@@ -240,19 +291,22 @@ function StepBrainstorm({ onBack, onSelect }) {
           label="How should it feel?"
           value={vibe}
           options={MAD_VIBE}
-          onPick={setVibe}
+          onPick={(v) => setVibe(v)}
+          slotKey="vibe"
         />
         <MadLibWordBank
           label="What kind of thing is it?"
           value={biz}
           options={MAD_BUSINESS}
-          onPick={setBiz}
+          onPick={(v) => setBiz(v)}
+          slotKey="biz"
         />
         <MadLibWordBank
           label="What do your people love?"
           value={love}
           options={MAD_LOVE}
-          onPick={setLove}
+          onPick={(v) => setLove(v)}
+          slotKey="love"
         />
 
         {!showOptionalNote ? (
