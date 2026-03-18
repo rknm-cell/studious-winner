@@ -38,7 +38,7 @@ const MAD_LOVE = [
 
 const MOCK_NAMES = [
   {
-    name: "Peter's Sticker Shop",
+    name: "Matty's Sticker Shop",
     reason: "Alliteration using the 's' sound from his favorite words sticker and shop",
   },
   {
@@ -411,7 +411,7 @@ function StepEnterName({ onBack, onSelect }) {
         value={name}
         onChange={(e) => setName(e.target.value)}
         onKeyDown={(e) => e.key === "Enter" && name.trim() && onSelect(name.trim())}
-        placeholder="e.g. Peter's Sticker Shop"
+        placeholder="e.g. Matty's Sticker Shop"
         className="w-full border-2 border-red-400 rounded-xl px-4 py-3 text-stone-700 placeholder-stone-300 focus:outline-none focus:ring-2 focus:ring-red-300 mb-4 bg-white text-base"
         autoFocus
       />
@@ -450,7 +450,7 @@ function StepConfirm({ businessName, onLockIn, onGoBack }) {
 
   useEffect(() => {
     if (!namePopActive) return;
-    const t = setTimeout(() => setNamePopActive(false), 1800);
+    const t = setTimeout(() => setNamePopActive(false), 900);
     return () => clearTimeout(t);
   }, [namePopActive]);
 
@@ -617,7 +617,7 @@ function StepConfirm({ businessName, onLockIn, onGoBack }) {
                 namePopActive ? { "--shimmer-base": "#292524" } : undefined
               }
             >
-              Peter
+              Matty
             </p>
           </div>
         </div>
