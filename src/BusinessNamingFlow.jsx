@@ -439,7 +439,6 @@ function StepConfirm({ businessName, onLockIn, onGoBack }) {
   const tasselTimerRef = useRef(null);
   // Start hidden; only show overlays when Curtains button is pressed.
   const [tasselFrame, setTasselFrame] = useState(null); // null = hidden, 1..7 = frame
-  const [shimmerNonce, setShimmerNonce] = useState(0);
   const [namePopActive, setNamePopActive] = useState(false);
 
   useEffect(() => {
@@ -518,7 +517,6 @@ function StepConfirm({ businessName, onLockIn, onGoBack }) {
     // Restart text sweep even if Shimmer is clicked again mid-animation.
     flushSync(() => setNamePopActive(false));
     setNamePopActive(true);
-    setShimmerNonce((n) => n + 1);
   };
 
   const handleCurtainsClick = () => {
@@ -573,22 +571,54 @@ function StepConfirm({ businessName, onLockIn, onGoBack }) {
           <h2
             className={
               namePopActive
-                ? "text-3xl font-bold leading-tight mb-3 business-name-shimmer-pop"
+                ? "text-3xl font-bold leading-tight mb-3 shimmer-text-pop"
                 : "text-3xl font-bold leading-tight mb-3 !text-stone-950"
+            }
+            style={
+              namePopActive ? { "--shimmer-base": "#0c0a09" } : undefined
             }
           >
             {businessName}
           </h2>
 
-          <p className="text-stone-400 text-sm tracking-wide mb-5">
+          <p
+            className={
+              namePopActive
+                ? "text-sm tracking-wide mb-5 shimmer-text-pop"
+                : "text-sm tracking-wide mb-5 !text-stone-400"
+            }
+            style={
+              namePopActive ? { "--shimmer-base": "#a8a29e" } : undefined
+            }
+          >
             est. {year} · Fashion
           </p>
 
           <div className="border-t border-stone-100 pt-5">
-            <p className="text-xs font-semibold tracking-widest text-stone-400 uppercase mb-1">
+            <p
+              className={
+                namePopActive
+                  ? "text-xs font-semibold tracking-widest uppercase mb-1 shimmer-text-pop"
+                  : "text-xs font-semibold tracking-widest uppercase mb-1 !text-stone-400"
+              }
+              style={
+                namePopActive ? { "--shimmer-base": "#a8a29e" } : undefined
+              }
+            >
               Founder &amp; CEO
             </p>
-            <p className="font-bold text-stone-800 text-lg">Peter</p>
+            <p
+              className={
+                namePopActive
+                  ? "font-bold text-lg shimmer-text-pop"
+                  : "font-bold text-lg !text-stone-800"
+              }
+              style={
+                namePopActive ? { "--shimmer-base": "#292524" } : undefined
+              }
+            >
+              Peter
+            </p>
           </div>
         </div>
 
@@ -612,14 +642,6 @@ function StepConfirm({ businessName, onLockIn, onGoBack }) {
           </div>
         )}
 
-        {shimmerNonce > 0 && (
-          <div
-            key={shimmerNonce}
-            className="absolute inset-0 z-30 pointer-events-none overflow-hidden"
-          >
-            <div className="shimmer-sweep" />
-          </div>
-        )}
       </div>
 
       <p className="text-center text-stone-500 text-base mb-4">

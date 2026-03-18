@@ -148,8 +148,8 @@ code {
   pointer-events: none;
 }
 
-/* Business name “pop to white” as shimmer passes (sync ~1.8s with .shimmer-sweep) */
-@keyframes businessNamePopSweep {
+/* Card text: sweep pops letters to white (Shimmer button) */
+@keyframes shimmerTextPopSweep {
   0% {
     background-position: 100% center;
   }
@@ -158,15 +158,17 @@ code {
   }
 }
 
-.business-name-shimmer-pop {
+/* --shimmer-base = normal text color (Tailwind stone); white band passes over */
+.shimmer-text-pop {
+  --shimmer-base: #0c0a09;
   background: linear-gradient(
     105deg,
-    #0c0a09 0%,
-    #0c0a09 36%,
+    var(--shimmer-base) 0%,
+    var(--shimmer-base) 36%,
     #ffffff 48%,
     #ffffff 52%,
-    #0c0a09 64%,
-    #0c0a09 100%
+    var(--shimmer-base) 64%,
+    var(--shimmer-base) 100%
   );
   background-size: 240% 100%;
   background-position: 100% center;
@@ -174,5 +176,5 @@ code {
   background-clip: text;
   -webkit-text-fill-color: transparent;
   color: transparent;
-  animation: businessNamePopSweep 1.8s ease-in-out forwards;
+  animation: shimmerTextPopSweep 1.8s ease-in-out forwards;
 }
