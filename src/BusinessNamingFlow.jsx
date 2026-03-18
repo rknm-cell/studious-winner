@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 
 const LIGHTBULB_OFF = "/animations/lightbulb/lightbulb_off.png";
 const LIGHTBULB_ON = "/animations/lightbulb/lightbulb_on.png";
@@ -433,11 +434,13 @@ function StepEnterName({ onBack, onSelect }) {
 function StepConfirm({ businessName, onLockIn, onGoBack }) {
   const year = new Date().getFullYear();
   const curtainTimerRef = useRef(null);
-  // Start covered with the first curtain frame so the card is only revealed after click.
-  const [curtainFrame, setCurtainFrame] = useState(0); // 0..5 = frame
+  // Start hidden; only show overlays when Curtains button is pressed.
+  const [curtainFrame, setCurtainFrame] = useState(null); // null = hidden, 0..5 = frame
   const tasselTimerRef = useRef(null);
-  // Start covered with the first tassel frame so the card is only revealed after click.
-  const [tasselFrame, setTasselFrame] = useState(1); // 1..7 = frame
+  // Start hidden; only show overlays when Curtains button is pressed.
+  const [tasselFrame, setTasselFrame] = useState(null); // null = hidden, 1..7 = frame
+  const [shimmerNonce, setShimmerNonce] = useState(0);
+  const [namePopActive, setNamePopActive] = useState(false);
 
   useEffect(() => {
     return () => {
@@ -445,6 +448,12 @@ function StepConfirm({ businessName, onLockIn, onGoBack }) {
       if (tasselTimerRef.current) clearInterval(tasselTimerRef.current);
     };
   }, []);
+
+  useEffect(() => {
+    if (!namePopActive) return;
+    const t = setTimeout(() => setNamePopActive(false), 1800);
+    return () => clearTimeout(t);
+  }, [namePopActive]);
 
   const playCurtain = () => {
     // Restart from 00 on every click.
@@ -496,7 +505,23 @@ function StepConfirm({ businessName, onLockIn, onGoBack }) {
       ? null
       : `/animations/tassels/${String(tasselFrame).padStart(2, "0")}.png`;
 
-  const playCurtainAndTassels = () => {
+  const triggerShimmer = () => {
+    // Shimmer is its own reveal mode: curtains/tassels should not show.
+    if (curtainTimerRef.current) clearInterval(curtainTimerRef.current);
+    if (tasselTimerRef.current) clearInterval(tasselTimerRef.current);
+    curtainTimerRef.current = null;
+    tasselTimerRef.current = null;
+
+    setCurtainFrame(null);
+    setTasselFrame(null);
+
+    // Restart text sweep even if Shimmer is clicked again mid-animation.
+    flushSync(() => setNamePopActive(false));
+    setNamePopActive(true);
+    setShimmerNonce((n) => n + 1);
+  };
+
+  const handleCurtainsClick = () => {
     playCurtain();
     playTassels();
   };
@@ -510,14 +535,32 @@ function StepConfirm({ businessName, onLockIn, onGoBack }) {
         ← Back
       </button>
 
+      {/* Reveal control */}
+      <div className="flex flex-wrap items-center justify-center gap-2 mb-4">
+        <button
+          type="button"
+          onClick={handleCurtainsClick}
+          className="px-3 py-1.5 rounded-full text-sm transition-all border border-red-500 bg-red-500 text-white hover:bg-red-600"
+        >
+          Curtains
+        </button>
+        <button
+          type="button"
+          onClick={triggerShimmer}
+          className="px-3 py-1.5 rounded-full text-sm transition-all border border-stone-200 bg-white text-stone-600 hover:bg-stone-50 hover:border-stone-300"
+        >
+          Shimmer
+        </button>
+      </div>
+
       {/* Business card (click to play curtain 00 → 05) */}
       <div
         className="bg-white rounded-2xl border-t-4 border-red-500 shadow-md p-8 mb-6 text-center relative overflow-hidden"
         role="button"
         tabIndex={0}
-        onClick={playCurtainAndTassels}
+        onClick={handleCurtainsClick}
         onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") playCurtainAndTassels();
+          if (e.key === "Enter" || e.key === " ") handleCurtainsClick();
         }}
       >
         <div className="relative z-0">
@@ -528,7 +571,13 @@ function StepConfirm({ businessName, onLockIn, onGoBack }) {
             <span className="w-3 h-3 rounded-full bg-green-400 inline-block" />
           </div>
 {/* change the h2 to a darker color than text-stone-900*/}
-          <h2 className="text-3xl font-bold leading-tight mb-3 text-stone-950">
+          <h2
+            className={
+              namePopActive
+                ? "text-3xl font-bold leading-tight mb-3 business-name-shimmer-pop"
+                : "text-3xl font-bold leading-tight mb-3 text-stone-950"
+            }
+          >
             {businessName}
           </h2>
 
@@ -561,6 +610,15 @@ function StepConfirm({ businessName, onLockIn, onGoBack }) {
               draggable={false}
               className="h-full w-full object-contain"
             />
+          </div>
+        )}
+
+        {shimmerNonce > 0 && (
+          <div
+            key={shimmerNonce}
+            className="absolute inset-0 z-30 pointer-events-none overflow-hidden"
+          >
+            <div className="shimmer-sweep" />
           </div>
         )}
       </div>
