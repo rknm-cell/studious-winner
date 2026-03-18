@@ -338,9 +338,11 @@ function StepSuccess({ businessName }) {
 export default function BusinessNamingFlow() {
   const [step, setStep] = useState("choose"); // choose | brainstorm | enter | confirm | success
   const [chosenName, setChosenName] = useState("");
+  const [nameSource, setNameSource] = useState("brainstorm"); // brainstorm | enter
 
-  const handleSelect = (name) => {
+  const handleSelect = (name, source) => {
     setChosenName(name);
+    setNameSource(source);
     setStep("confirm");
   };
 
@@ -357,7 +359,7 @@ export default function BusinessNamingFlow() {
     return (
       <StepBrainstorm
         onBack={() => setStep("choose")}
-        onSelect={handleSelect}
+        onSelect={(name) => handleSelect(name, "brainstorm")}
       />
     );
   }
@@ -366,7 +368,7 @@ export default function BusinessNamingFlow() {
     return (
       <StepEnterName
         onBack={() => setStep("choose")}
-        onSelect={handleSelect}
+        onSelect={(name) => handleSelect(name, "enter")}
       />
     );
   }
@@ -376,7 +378,9 @@ export default function BusinessNamingFlow() {
       <StepConfirm
         businessName={chosenName}
         onLockIn={() => setStep("success")}
-        onGoBack={() => setStep("brainstorm")}
+        onGoBack={() =>
+          setStep(nameSource === "enter" ? "enter" : "brainstorm")
+        }
       />
     );
   }
