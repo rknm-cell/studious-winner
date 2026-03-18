@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const LIGHTBULB_OFF = "/animations/lightbulb/lightbulb_off.png";
 const LIGHTBULB_ON = "/animations/lightbulb/lightbulb_on.png";
@@ -378,6 +378,74 @@ function StepEnterName({ onBack, onSelect }) {
 // ─── Step 3: Confirmation card ────────────────────────────────────────────────
 function StepConfirm({ businessName, onLockIn, onGoBack }) {
   const year = new Date().getFullYear();
+  const curtainTimerRef = useRef(null);
+  // Start covered with the first curtain frame so the card is only revealed after click.
+  const [curtainFrame, setCurtainFrame] = useState(0); // 0..5 = frame
+  const tasselTimerRef = useRef(null);
+  // Start covered with the first tassel frame so the card is only revealed after click.
+  const [tasselFrame, setTasselFrame] = useState(1); // 1..7 = frame
+
+  useEffect(() => {
+    return () => {
+      if (curtainTimerRef.current) clearInterval(curtainTimerRef.current);
+      if (tasselTimerRef.current) clearInterval(tasselTimerRef.current);
+    };
+  }, []);
+
+  const playCurtain = () => {
+    // Restart from 00 on every click.
+    if (curtainTimerRef.current) clearInterval(curtainTimerRef.current);
+
+    setCurtainFrame(0);
+
+    let frame = 0;
+    curtainTimerRef.current = setInterval(() => {
+      frame += 1;
+      if (frame > 5) {
+        clearInterval(curtainTimerRef.current);
+        curtainTimerRef.current = null;
+        setCurtainFrame(5);
+        return;
+      }
+      setCurtainFrame(frame);
+    }, 120);
+  };
+
+  const playTassels = () => {
+    if (tasselTimerRef.current) clearInterval(tasselTimerRef.current);
+
+    setTasselFrame(1);
+
+    let frame = 1;
+    tasselTimerRef.current = setInterval(() => {
+      if (frame >= 7) {
+        clearInterval(tasselTimerRef.current);
+        tasselTimerRef.current = null;
+        setTasselFrame(7);
+        return;
+      }
+      frame += 1;
+      setTasselFrame(frame);
+    }, 120);
+  };
+
+  const curtainSrc =
+    curtainFrame === null
+      ? null
+      : `/animations/curtain/${String(curtainFrame).padStart(
+          2,
+          "0"
+        )}.png`;
+
+  const tasselSrc =
+    tasselFrame === null
+      ? null
+      : `/animations/tassels/${String(tasselFrame).padStart(2, "0")}.png`;
+
+  const playCurtainAndTassels = () => {
+    playCurtain();
+    playTassels();
+  };
 
   return (
     <Shell>
@@ -388,29 +456,59 @@ function StepConfirm({ businessName, onLockIn, onGoBack }) {
         ← Back
       </button>
 
-      {/* Business card */}
-      <div className="bg-white rounded-2xl border-t-4 border-red-500 shadow-md p-8 mb-6 text-center">
-        {/* Traffic light dots */}
-        <div className="flex justify-center gap-1.5 mb-5">
-          <span className="w-3 h-3 rounded-full bg-red-400 inline-block" />
-          <span className="w-3 h-3 rounded-full bg-yellow-400 inline-block" />
-          <span className="w-3 h-3 rounded-full bg-green-400 inline-block" />
-        </div>
+      {/* Business card (click to play curtain 00 → 05) */}
+      <div
+        className="bg-white rounded-2xl border-t-4 border-red-500 shadow-md p-8 mb-6 text-center relative overflow-hidden"
+        role="button"
+        tabIndex={0}
+        onClick={playCurtainAndTassels}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") playCurtainAndTassels();
+        }}
+      >
+        <div className="relative z-0">
+          {/* Traffic light dots */}
+          <div className="flex justify-center gap-1.5 mb-5">
+            <span className="w-3 h-3 rounded-full bg-red-400 inline-block" />
+            <span className="w-3 h-3 rounded-full bg-yellow-400 inline-block" />
+            <span className="w-3 h-3 rounded-full bg-green-400 inline-block" />
+          </div>
+{/* change the h2 to a darker color than text-stone-900*/}
+          <h2 className="text-3xl font-bold leading-tight mb-3 text-stone-950">
+            {businessName}
+          </h2>
 
-        <h2 className="text-3xl font-bold text-stone-900 leading-tight mb-3">
-          {businessName}
-        </h2>
-
-        <p className="text-stone-400 text-sm tracking-wide mb-5">
-          est. {year} · Fashion
-        </p>
-
-        <div className="border-t border-stone-100 pt-5">
-          <p className="text-xs font-semibold tracking-widest text-stone-400 uppercase mb-1">
-            Founder &amp; CEO
+          <p className="text-stone-400 text-sm tracking-wide mb-5">
+            est. {year} · Fashion
           </p>
-          <p className="font-bold text-stone-800 text-lg">Peter</p>
+
+          <div className="border-t border-stone-100 pt-5">
+            <p className="text-xs font-semibold tracking-widest text-stone-400 uppercase mb-1">
+              Founder &amp; CEO
+            </p>
+            <p className="font-bold text-stone-800 text-lg">Peter</p>
+          </div>
         </div>
+
+        {curtainSrc && (
+          <img
+            src={curtainSrc}
+            alt=""
+            draggable={false}
+            className="absolute inset-0 z-10 w-full h-full object-cover pointer-events-none select-none"
+          />
+        )}
+
+        {tasselSrc && (
+          <div className="absolute inset-y-0 left-0 z-20 w-16 pointer-events-none select-none">
+            <img
+              src={tasselSrc}
+              alt=""
+              draggable={false}
+              className="h-full w-full object-contain"
+            />
+          </div>
+        )}
       </div>
 
       <p className="text-center text-stone-500 text-base mb-4">
