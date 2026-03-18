@@ -1,6 +1,39 @@
 import { useState } from "react";
 
-const SUGGESTION_TAGS = ["stickers", "custom", "colorful", "fun", "sticky", "pop"];
+const LIGHTBULB_OFF = "/animations/lightbulb/lightbulb_off.png";
+const LIGHTBULB_ON = "/animations/lightbulb/lightbulb_on.png";
+
+/** Mad-lib word banks — tap one per row */
+const MAD_VIBE = [
+  "playful",
+  "bold",
+  "cozy",
+  "premium",
+  "quirky",
+  "local",
+  "minimal",
+  "wild",
+];
+const MAD_BUSINESS = [
+  "sticker shop",
+  "online store",
+  "studio",
+  "brand",
+  "side hustle",
+  "small business",
+  "maker shop",
+  "creative project",
+];
+const MAD_LOVE = [
+  "color",
+  "custom touches",
+  "making people smile",
+  "quality",
+  "fun",
+  "community",
+  "standing out",
+  "keeping it real",
+];
 
 const MOCK_NAMES = [
   {
@@ -21,10 +54,38 @@ const MOCK_NAMES = [
   },
 ];
 
+function starterBatch(offset) {
+  return [0, 1, 2].map((i) => MOCK_NAMES[(offset + i) % MOCK_NAMES.length]);
+}
+
+function MadLibWordBank({ label, value, options, onPick }) {
+  return (
+    <div className="mb-5">
+      <p className="text-sm font-semibold text-stone-700 mb-2">{label}</p>
+      <div className="flex flex-wrap gap-2">
+        {options.map((opt) => (
+          <button
+            key={opt}
+            type="button"
+            onClick={() => onPick(opt)}
+            className={`rounded-xl border px-3 py-2.5 text-left text-sm transition-all ${
+              value === opt
+                ? "border-red-500 bg-red-500 text-white"
+                : "border-stone-200 bg-white text-stone-700 hover:border-stone-300 hover:bg-stone-50"
+            }`}
+          >
+            {opt}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── Shared layout wrapper ───────────────────────────────────────────────────
 function Shell({ children }) {
   return (
-    <div className="min-h-screen bg-stone-100 flex items-center justify-center p-4 font-sans">
+    <div className="min-h-screen bg-white flex items-center justify-center p-4 font-sans">
       <div className="w-full max-w-lg">{children}</div>
     </div>
   );
@@ -34,46 +95,42 @@ function Shell({ children }) {
 function StepChoose({ onBrainstorm, onHaveName }) {
   return (
     <Shell>
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-stone-800 mb-2">
-          Let's name your business!
-        </h1>
-        <p className="text-stone-500 text-base">
-          Already have a name in mind, or want us to help brainstorm one?
-        </p>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        {/* I have a name */}
+      <div className="flex flex-col items-center justify-center text-center min-h-[60vh] gap-8">
         <button
-          onClick={onHaveName}
-          className="bg-white border border-stone-200 rounded-2xl p-6 flex flex-col items-center gap-3 hover:shadow-md hover:border-stone-300 transition-all text-left group"
+          type="button"
+          aria-label="Help me brainstorm"
+          onClick={onBrainstorm}
+          className="group flex flex-col items-center gap-5 rounded-3xl px-8 py-10 transition-transform active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-100"
         >
-          <span className="text-3xl">🎯</span>
-          <div>
-            <p className="font-bold text-stone-800 group-hover:text-red-600 transition-colors">
-              I have a name
-            </p>
-            <p className="text-stone-400 text-sm mt-0.5">
-              I know what I want to call it
-            </p>
+          <div className="relative h-36 w-36 shrink-0">
+            <img
+              src={LIGHTBULB_OFF}
+              alt=""
+              width={144}
+              height={144}
+              className="absolute inset-0 h-full w-full object-contain transition-opacity duration-200 group-hover:opacity-0 group-active:opacity-0 pointer-events-none select-none"
+              draggable={false}
+            />
+            <img
+              src={LIGHTBULB_ON}
+              alt=""
+              width={144}
+              height={144}
+              className="absolute inset-0 h-full w-full object-contain opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-active:opacity-100 pointer-events-none select-none"
+              draggable={false}
+            />
           </div>
+          <span className="text-2xl font-bold text-stone-800 transition-colors group-hover:text-red-600">
+            Help me brainstorm
+          </span>
         </button>
 
-        {/* Help me brainstorm */}
         <button
-          onClick={onBrainstorm}
-          className="bg-white border border-stone-200 rounded-2xl p-6 flex flex-col items-center gap-3 hover:shadow-md hover:border-stone-300 transition-all text-left group"
+          type="button"
+          onClick={onHaveName}
+          className="text-sm text-stone-500 underline-offset-4 hover:text-stone-700 hover:underline"
         >
-          <span className="text-3xl">💡</span>
-          <div>
-            <p className="font-bold text-stone-800 group-hover:text-red-600 transition-colors">
-              Help me brainstorm
-            </p>
-            <p className="text-stone-400 text-sm mt-0.5">
-              Give me some words and I'll get creative
-            </p>
-          </div>
+          I already have a name
         </button>
       </div>
     </Shell>
@@ -82,34 +139,35 @@ function StepChoose({ onBrainstorm, onHaveName }) {
 
 // ─── Step 2: Brainstorm ───────────────────────────────────────────────────────
 function StepBrainstorm({ onBack, onSelect }) {
-  const [input, setInput] = useState("");
-  const [tags, setTags] = useState([]);
-  const [result, setResult] = useState(null);
-  const [nameIndex, setNameIndex] = useState(0);
+  const [vibe, setVibe] = useState(null);
+  const [biz, setBiz] = useState(null);
+  const [love, setLove] = useState(null);
+  const [extraNote, setExtraNote] = useState("");
+  const [starterOffset, setStarterOffset] = useState(0);
+  const [tailored, setTailored] = useState(null);
+  const [tailorIndex, setTailorIndex] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [showOptionalNote, setShowOptionalNote] = useState(false);
 
-  const toggleTag = (tag) => {
-    setTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
-    );
-  };
+  const starters = starterBatch(starterOffset);
 
-  const handleBrainstorm = () => {
-    if (!input.trim() && tags.length === 0) return;
+  const madLibComplete = Boolean(vibe && biz && love);
+  const canTailor = madLibComplete || extraNote.trim().length > 0;
+
+  const handleTailor = () => {
+    if (!canTailor) return;
     setLoading(true);
     setTimeout(() => {
-      setResult(MOCK_NAMES[nameIndex % MOCK_NAMES.length]);
+      setTailored(MOCK_NAMES[tailorIndex % MOCK_NAMES.length]);
       setLoading(false);
     }, 800);
   };
 
-  const handleShowAnother = () => {
-    const next = nameIndex + 1;
-    setNameIndex(next);
-    setResult(MOCK_NAMES[next % MOCK_NAMES.length]);
+  const handleShowAnotherTailored = () => {
+    const next = tailorIndex + 1;
+    setTailorIndex(next);
+    setTailored(MOCK_NAMES[next % MOCK_NAMES.length]);
   };
-
-  const canBrainstorm = input.trim().length > 0 || tags.length > 0;
 
   return (
     <Shell>
@@ -122,82 +180,155 @@ function StepBrainstorm({ onBack, onSelect }) {
           ← Back
         </button>
         <h1 className="text-3xl font-bold text-stone-800 mb-2">
-          Let's name your business!
+          Here are some ideas
         </h1>
         <p className="text-stone-500 text-base">
-          Give us some words — feelings, places, things you love — and we'll
-          mash them into name ideas.
+          Tap one to use it, or fill in the sentence below for ideas tuned to you.
         </p>
       </div>
 
-      {/* Input */}
-      <input
-        type="text"
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && handleBrainstorm()}
-        placeholder="e.g. words, feelings, or things you love"
-        className="w-full border-2 border-red-400 rounded-xl px-4 py-3 text-stone-700 placeholder-stone-300 focus:outline-none focus:ring-2 focus:ring-red-300 mb-3 bg-white text-base"
-      />
-
-      {/* Tag pills */}
-      <div className="flex flex-wrap gap-2 mb-5">
-        {SUGGESTION_TAGS.map((tag) => (
+      {/* Instant starter ideas (no input required) */}
+      <p className="text-xs font-semibold tracking-widest text-stone-400 uppercase mb-3">
+        Starter picks
+      </p>
+      <div className="flex flex-col gap-3 mb-6">
+        {starters.map((idea) => (
           <button
-            key={tag}
-            onClick={() => toggleTag(tag)}
-            className={`px-4 py-1.5 rounded-full border text-sm transition-all ${
-              tags.includes(tag)
-                ? "bg-red-500 text-white border-red-500"
-                : "bg-white text-stone-600 border-stone-300 hover:border-stone-400"
-            }`}
+            key={`${starterOffset}-${idea.name}`}
+            type="button"
+            onClick={() => onSelect(idea.name)}
+            className="w-full text-left rounded-2xl border border-stone-200 bg-white p-4 hover:border-stone-300 hover:bg-stone-50 transition-all"
           >
-            {tag}
+            <p className="font-bold text-stone-800 text-lg">{idea.name}</p>
+            <p className="text-stone-400 text-sm mt-1">{idea.reason}</p>
           </button>
         ))}
       </div>
+      <button
+        type="button"
+        onClick={() => setStarterOffset((o) => o + 3)}
+        className="w-full mb-8 py-2.5 text-sm font-medium text-stone-600 border border-stone-200 rounded-xl hover:bg-stone-50 transition-colors"
+      >
+        Show 3 more ideas
+      </button>
 
-      {/* CTA row */}
-      <div className="flex items-center gap-4 mb-6">
-        <button
-          onClick={handleBrainstorm}
-          disabled={!canBrainstorm || loading}
-          className={`flex-1 py-3 rounded-full font-semibold text-white transition-all text-base ${
-            canBrainstorm && !loading
-              ? "bg-red-500 hover:bg-red-600 shadow-sm"
-              : "bg-red-200 cursor-not-allowed"
-          }`}
-        >
-          {loading ? "Thinking…" : "Brainstorm names →"}
-        </button>
-        <button
-          onClick={onBack}
-          className="text-stone-400 hover:text-stone-600 text-sm whitespace-nowrap transition-colors"
-        >
-          I already have a name
-        </button>
-      </div>
+      {/* Mad-lib refine */}
+      <div className="border-t border-stone-100 pt-6">
+        <p className="text-xs font-semibold tracking-widest text-stone-400 uppercase mb-2">
+          Tune ideas to you
+        </p>
+        <p className="text-stone-600 text-base mb-4">
+          Tap once in each row to finish the sentence.
+        </p>
 
-      {/* Result card */}
-      {result && (
-        <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden">
-          <button
-            onClick={() => onSelect(result.name)}
-            className="w-full text-left p-5 hover:bg-stone-50 transition-colors"
-          >
-            <p className="font-bold text-stone-800 text-lg">{result.name}</p>
-            <p className="text-stone-400 text-sm mt-1">{result.reason}</p>
-          </button>
-          <div className="border-t border-stone-100">
-            <button
-              onClick={handleShowAnother}
-              className="w-full py-3 text-stone-500 hover:text-stone-700 text-sm transition-colors"
-            >
-              We've got more — show me another
-            </button>
-          </div>
+        <div className="rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4 mb-6 text-center text-stone-800 text-lg leading-relaxed">
+          A{" "}
+          <span className={vibe ? "font-bold text-red-600" : "text-stone-400"}>
+            {vibe ?? "……"}
+          </span>{" "}
+          <span className={biz ? "font-bold text-red-600" : "text-stone-400"}>
+            {biz ?? "……"}
+          </span>{" "}
+          for people who love{" "}
+          <span className={love ? "font-bold text-red-600" : "text-stone-400"}>
+            {love ?? "……"}
+          </span>
+          .
         </div>
-      )}
+
+        <MadLibWordBank
+          label="How should it feel?"
+          value={vibe}
+          options={MAD_VIBE}
+          onPick={setVibe}
+        />
+        <MadLibWordBank
+          label="What kind of thing is it?"
+          value={biz}
+          options={MAD_BUSINESS}
+          onPick={setBiz}
+        />
+        <MadLibWordBank
+          label="What do your people love?"
+          value={love}
+          options={MAD_LOVE}
+          onPick={setLove}
+        />
+
+        {!showOptionalNote ? (
+          <button
+            type="button"
+            onClick={() => setShowOptionalNote(true)}
+            className="mb-4 text-sm text-stone-500 hover:text-stone-700 underline-offset-2 hover:underline"
+          >
+            Add a note (optional)
+          </button>
+        ) : (
+          <div className="mb-4">
+            <label className="text-sm font-medium text-stone-600 block mb-2">
+              Anything else we should know?
+            </label>
+            <input
+              type="text"
+              value={extraNote}
+              onChange={(e) => setExtraNote(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && canTailor && handleTailor()}
+              placeholder="e.g. rhymes, a name you almost picked…"
+              className="w-full border border-stone-200 rounded-xl px-4 py-3 text-stone-700 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-red-300 bg-white text-base"
+            />
+          </div>
+        )}
+
+        {!madLibComplete && !extraNote.trim() && (
+          <p className="text-sm text-stone-400 mb-3">
+            Pick all three, or open “Add a note” and type a short hint.
+          </p>
+        )}
+
+        <div className="flex items-center gap-4 mb-4">
+          <button
+            type="button"
+            onClick={handleTailor}
+            disabled={!canTailor || loading}
+            className={`flex-1 py-3 rounded-full font-semibold text-white transition-all text-base ${
+              canTailor && !loading
+                ? "bg-red-500 hover:bg-red-600 shadow-sm"
+                : "bg-red-200 cursor-not-allowed"
+            }`}
+          >
+            {loading ? "Thinking…" : "Get tailored ideas →"}
+          </button>
+          <button
+            type="button"
+            onClick={onBack}
+            className="text-stone-400 hover:text-stone-600 text-sm whitespace-nowrap transition-colors"
+          >
+            I already have a name
+          </button>
+        </div>
+
+        {tailored && (
+          <div className="rounded-2xl border border-stone-200 overflow-hidden">
+            <button
+              type="button"
+              onClick={() => onSelect(tailored.name)}
+              className="w-full text-left p-5 hover:bg-stone-50 transition-colors"
+            >
+              <p className="font-bold text-stone-800 text-lg">{tailored.name}</p>
+              <p className="text-stone-400 text-sm mt-1">{tailored.reason}</p>
+            </button>
+            <div className="border-t border-stone-100">
+              <button
+                type="button"
+                onClick={handleShowAnotherTailored}
+                className="w-full py-3 text-stone-500 hover:text-stone-700 text-sm transition-colors"
+              >
+                Show me another tailored idea
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </Shell>
   );
 }
