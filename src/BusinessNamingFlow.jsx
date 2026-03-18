@@ -570,12 +570,11 @@ function StepConfirm({ businessName, onLockIn, onGoBack }) {
             <span className="w-3 h-3 rounded-full bg-yellow-400 inline-block" />
             <span className="w-3 h-3 rounded-full bg-green-400 inline-block" />
           </div>
-{/* change the h2 to a darker color than text-stone-900*/}
           <h2
             className={
               namePopActive
                 ? "text-3xl font-bold leading-tight mb-3 business-name-shimmer-pop"
-                : "text-3xl font-bold leading-tight mb-3 text-stone-950"
+                : "text-3xl font-bold leading-tight mb-3 !text-stone-950"
             }
           >
             {businessName}
